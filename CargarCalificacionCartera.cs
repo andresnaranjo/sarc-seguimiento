@@ -41,7 +41,7 @@ namespace Opa.Framework.Integration.Jobs.Tasks
         }
 
 
-    
+
 
 
 
@@ -418,11 +418,11 @@ namespace Opa.Framework.Integration.Jobs.Tasks
                                                              new XElement("NumeroNovaciones", Fila.NumeroNovaciones),
                                                              new XElement("SaldoTotalDeuda", Fila.SaldoTotalDeuda),
                                                              new XElement("CalificacionActual", Fila.CalificacionActual),
-                                                             //new XElement("ProvisionActual", Fila.ProvisionActual),
+                            //new XElement("ProvisionActual", Fila.ProvisionActual),
                                                              new XElement("CalificacionPropuesta", Fila.CalificacionPropuesta),
-                                                             //new XElement("ProvisionPropuesta", Fila.ProvisionPropuesta),
+                            //new XElement("ProvisionPropuesta", Fila.ProvisionPropuesta),
                                                              new XElement("CalificacionDefinitiva", Fila.CalificacionDefinitiva),
-                                                             //new XElement("ProvisionDefinitiva", Fila.ProvisionDefinitiva),
+                            //new XElement("ProvisionDefinitiva", Fila.ProvisionDefinitiva),
                                                              new XElement("FechaCalificacionDefinitiva", Fila.FechaCalificacionDefinitiva),
                                                              new XElement("Observaciones", Fila.Observaciones)
                                                   ));
@@ -533,6 +533,175 @@ namespace Opa.Framework.Integration.Jobs.Tasks
 
 
         #endregion
+
+
+        #region nuevoSeguimiento
+
+        public async void CargarScoreSeguimientoAsyncNuevoSeguimiento()
+        {
+            OpaServicioFachada Fa = new OpaServicioFachada();
+            this.StatusTask = Status.Running;
+            short ValorEnum = 0;
+            string nombre = "ResultadosScore";
+
+
+
+
+            try
+            {
+
+
+                Fa.GuardarEstadoDelServicio(ValorEnum, nombre, "Sarc");
+                // Guardo el log funcional de ejecucion de este proceso    
+                red = new DatosRedFacade().ObtenerDatosDeRed();
+                new OpaAuditoriaFachada().GuardarLogFuncionalWFAsync("Servicio windows para carga de informacion <ResultadosScore>",
+                                                                     "Not Gui required",
+                                                                     "<root><NoData>Not data is required to execution</NoData></root>",
+                                                                     new DatosUsuarioAuditoria
+                                                                     {
+                                                                         NombreUsuario = "User is not required",
+                                                                         CodigoUsuario = "",
+                                                                         DireccionIp = red.Ip,
+
+                                                                     });
+
+
+                string Estado = ConfigurationManager.AppSettings["Estado"];
+
+                OpaServicioFachada FachadaServicio = new OpaServicioFachada();
+
+                //List<Sarc_ViewCreditosParaSeguimiento> EntidadCreditosPersona = new List<Sarc_ViewCreditosParaSeguimiento>();
+
+                //EntidadCreditosPersona = new OpaSarcFachada().BuscarListaCreditosParaSeguimiento();
+
+                //EntidadCreditosPersona = EntidadCreditosPersona.Skip(1335).ToList();
+
+
+                List<ResultadosScore> EntidadCreditosPersona = new List<ResultadosScore>();
+
+                List<Opa.Sarc.Entidades.ResultadosScore> EntidadResultado = new Opa.Sarc.Negocio.Logica.ResultadosScoreBL().BuscarListarResultadosScore();
+
+
+                EntidadCreditosPersona = (from c in EntidadResultado
+                                          where c.ScoreInicial = true
+                                          select c).Distinct().ToList();
+
+
+
+
+                bool CargarHistoria = false;
+                //bool CargarHistoria = true;  
+                OpaTransaccionalFachada FachadaTransaccional = new OpaTransaccionalFachada();
+                List<ResultadosScore> List = new List<ResultadosScore>();
+                //new Opa.Sarc.Negocio.FlujoTrabajo.ModeloCalificacionWF2().CargarDatos();
+
+
+                //foreach (Sarc_ViewCreditosParaSeguimiento Registro in EntidadCreditosPersona)
+                //{
+                //    string NroSolicitud = Registro.NroSolicitudOtorgamiento == 0 ? "" : Registro.NroSolicitudOtorgamiento.ToString();
+                //    decimal CedulaPersona = Convert.ToDecimal(Registro.IdentificacionPersona);
+                //    try
+                //    {
+                //        ArrayList ArrayCentral = new ArrayList();
+                //        List<ModeloCalificacion> EntidadModeloCalificacion = new Opa.Sarc.Negocio.FlujoTrabajo.ModeloCalificacionWF().ModeloCalificacionAsociado(CedulaPersona, NroSolicitud, 1, ArrayCentral, CargarHistoria, false, false);
+
+                //        if (EntidadModeloCalificacion != null && EntidadModeloCalificacion.Count > 0)
+                //        {
+                //            CapacidadPago(CedulaPersona, EntidadModeloCalificacion.FirstOrDefault().NroSolicitud, EntidadModeloCalificacion.FirstOrDefault(), EntidadModeloCalificacion.FirstOrDefault().EgresosExternos);
+                //        }
+
+                //        decimal NroSol = Convert.ToDecimal(EntidadModeloCalificacion.FirstOrDefault().NroSolicitud);
+                //        bool existe = new OpaTransaccionalFachada().BuscarLiquidaCreditosPersonaPorSolicitud(NroSol);
+                //        if (!existe)
+                //        {
+                //            CreditosPersona CreditoPersona = new OpaSarcFachada().BuscarUnCreditosPersonaPorPagare(Convert.ToInt32(Registro.NroPagare));
+                //            string numeroPagare = CreditoPersona.NumeroPagare.ToString();
+                //            decimal nroSolicitud = FachadaTransaccional.BuscarLiquidaCreditosPagare(numeroPagare);
+
+                //            FachadaTransaccional.GuardarLiquidaCreditosPersona(new LiquidacreditosPersonas()
+                //            {
+                //                CedulaPersona = Convert.ToInt64(CedulaPersona),
+                //                NumeroSolicitud = nroSolicitud,
+                //                Plazo = CreditoPersona.Plazo.ToString(),
+                //                coddestino = CreditoPersona.Coddestino,
+                //                NumeroSolicitudOtorgamiento = Convert.ToDecimal(EntidadModeloCalificacion.FirstOrDefault().NroSolicitud),
+                //                Valor = CreditoPersona.CapitalInicial,
+                //                Fecha = CreditoPersona.FechaCargoPrestamo,
+                //                Codlinea = CreditoPersona.Codlinea,
+                //                Obligatorio = false,
+                //                Reestructuracion = false,
+                //                CreditosReestructurados = "",
+                //                ExigeCodeudor = false,
+                //                Codeudores = "",
+                //                IncluyeExtras = false,
+                //                CuotasExtras = "",
+                //                IncluyeCostos = false,
+                //                Tasa = CreditoPersona.TasaColocacion,
+                //                CostosAdicionales = "",
+                //                EsOtorgamientoMasivo = true
+
+                //            });
+                //        }
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        string exe = ex.Message.ToString();
+
+                //    }
+                //}
+            }
+            catch (Exception ex)
+            {
+                DatosUsuarioAuditoria d = new DatosUsuarioAuditoria()
+                {
+                    NombreUsuario = "User is not required",
+                    CodigoUsuario = "",
+                    DireccionIp = red.Ip,
+                };
+
+                // Loggin error 
+                Guid idlog = OpaExceptionHandling.Handle(ex, d);
+                this.StatusTask = Status.Error;
+                ValorEnum = (short)StatusTask;
+                Fa.GuardarEstadoDelServicio(ValorEnum, nombre, "Sarc");
+                return;
+            }
+
+            this.StatusTask = Status.Ok;
+            ValorEnum = (short)StatusTask;
+            Fa.GuardarEstadoDelServicio(ValorEnum, nombre, "Sarc");
+            Task.Factory.StartNew(() => CalificacionCartera());
+        }
+
+
+        public List<ResultadosScore> TransformarResultadoScoreNuevoSeguimiento(List<ResultadoScorePartial> lista, List<ResultadosScore> ListaScoreCapacidades)
+        {
+            List<ResultadosScore> RestultadoScore = new List<ResultadosScore>();
+            RestultadoScore = (from c in lista
+                               join d in ListaScoreCapacidades on c.IdResultadosScore equals d.IdResultadosScore
+                               select new ResultadosScore
+                               {
+                                   IdResultadosScore = c.IdResultadosScore,
+                                   CedulaPersona = c.CedulaPersona,
+                                   NombrePersona = c.NombrePersona,
+                                   NroSolicitud = c.NroSolicitud,
+                                   FechaScore = c.FechaScore,
+                                   PesoCuantitativo = c.PesoCuantitativo,
+                                   PesoCualitativo = c.PesoCualitativo,
+                                   Calificacion = c.Calificacion,
+                                   ResultadosVariables = c.ResultadosVariables,
+                                   ResultadosCapacidad = d.ResultadosCapacidad,
+                                   Limites = d.Limites,
+                                   ScoreInicial = c.ScoreInicial,
+                                   IdConsultasCentral = c.IdConsultasCentral,
+                                   IdSegmento = c.IdSegmento,
+
+                               }).ToList();
+            return RestultadoScore;
+        }
+
+        #endregion
+
 
     }
 }
